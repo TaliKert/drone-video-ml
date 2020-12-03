@@ -1,0 +1,4 @@
+classes=1
+train=data/person-coco-train.txt
+valid=data/person-coco-valid.txt
+names=data/person-coco.names
