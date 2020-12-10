@@ -13,7 +13,7 @@ from drone_command import *
 def detect():
     # ip = opt.droneip
     # For the Tello drone, this should be `udp://<LOCAL IP>:111111`
-    source = 'rtsp://' + opt.source + ':5554/camera'
+    source = 'rtsp://' + opt.droneip + ':5554/camera'
 
     # Initialize
     device = torch_utils.select_device(opt.device)
@@ -112,9 +112,8 @@ if __name__ == '__main__':
     parser.add_argument('--conf-thres', type=float, default=0.3, help='object confidence threshold')
     parser.add_argument('--iou-thres', type=float, default=0.6, help='IOU threshold for NMS')
     parser.add_argument('--device', default='', help='device id (i.e. 0 or 0,1) or cpu')
-    parser.add_argument('--source', type=str, default='192.168.0.101', help='source')
     parser.add_argument('--img-size', type=int, default=512, help='inference size (pixels)')
-    parser.add_argument('--droneip', action='store_true', help='drone IP :D')
+    parser.add_argument('--droneip', type=str, help='drone IP :D')
     opt = parser.parse_args()
     opt.cfg = check_file(opt.cfg)  # check file
     opt.names = check_file(opt.names)  # check file
