@@ -1,19 +1,48 @@
 from easytello import tello
 
-def getCommand(bounding_boxes):
-    return None
+from enum import Enum
+
+ERROR_BOUNDARY = 50
 
 
-def sendCommand(command):
-    return None
+class ControlStates(Enum):
+    ON_GROUND = 1
+    CENTER = 2
 
 
-def sendCommandToDrone(bounding_boxes, dimens):
+def init_drone():
+    return tello.Tello(), ControlStates.ON_GROUND
 
 
+def proportional_centering(drone, bounding_box_center, frame_center):
+    KP = 0.5
+    error = frame_center - bounding_box_center
+    """
+    Send RC control via four channels.
+        a: left/right (-100~100)
+        b: forward/backward (-100~100)
+        c: up/down (-100~100)
+        d: yaw (-100~100)
+    """
+    return drone.rc_control, (KP * error, 0, 0, 0)
 
-    command = getCommand(bounding_boxes)
-    sendCommand(command)
+
+def getCommand(drone, state, bounding_boxes, frame_center):
+    if state == ControlStates.ON_GROUND:
+        return drone.take_off, ()
+    elif state == ControlStates.CENTER:
+        biggest_box = sorted(bounding_boxes, key=lambda x, y, w, h: w * h)
+        return proportional_centering(drone, biggest_box[0], frame_center)
+    return drone.land, (), state
+
+
+def sendCommand(command, arguments):
+    return command(*arguments)
+
+
+def sendCommandToDrone(drone, bounding_boxes, dimens, state):
+    command, arguments, state = getCommand(drone, state, bounding_boxes, int(dimens[1] / 2))
+    response = sendCommand(command, arguments) == 'ok'
     print(bounding_boxes)
     """
     [tensor([[245., 200., 292., 306.],
@@ -30,8 +59,8 @@ def sendCommandToDrone(bounding_boxes, dimens):
         [149., 415., 202., 476.]], device='cuda:0')]
     """
 
-    print(dimens) # DIMENS (480, 640, 3)
+    print(dimens)  # DIMENS (480, 640, 3)
 
     # tello.Tello()
 
-    return None
+    return response, state

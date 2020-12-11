@@ -71,7 +71,7 @@ def run_inference(dataset, device, model, imgsz, half):
         bounding_boxes, im0 = process_detections(im0s, img, path, pred, t1, t2)
 
         if im0 is not None and len(bounding_boxes) > 0:
-            sendCommandToDrone(bounding_boxes, im0.shape)
+            command_successful, drone_state = sendCommandToDrone(drone, bounding_boxes, im0.shape, drone_state)
 
 
 def process_detections(im0s, img, path, pred, t1, t2):
@@ -119,5 +119,6 @@ if __name__ == '__main__':
     opt.names = check_file(opt.names)  # check file
     print(opt)
 
+    drone, drone_state = init_drone()
     with torch.no_grad():
         detect()
