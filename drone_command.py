@@ -1,11 +1,8 @@
 import time
 
-import cv2
 from easytello import tello
 
 from enum import Enum
-
-ERROR_BOUNDARY = 50
 
 
 class ControlStates(Enum):
@@ -85,20 +82,3 @@ def sendCommandToDrone(drone, bounding_boxes, dimens, state):
     # tello.Tello()
 
     return response, state
-
-
-if __name__ == '__main__':
-    drone, drone_state, start_time = init_drone()
-    cap = cv2.VideoCapture('udp://' + drone.tello_ip + ':11111')
-    # drone.streamon()
-    # while True:
-    #    command_successful, drone_state = sendCommandToDrone(drone, [(0, 2, 90, 5)], (480, 640, 3), drone_state,
-    # start_time)
-    # ret, frame = cap.read()
-    # if ret:
-    #    cv2.imshow("cap", frame)
-    #    k = cv2.waitKey(1) & 0xFF
-    #    if k == 27:
-    #        break
-    # cap.release()
-    # cv2.destroyAllWindows()
