@@ -1,3 +1,5 @@
+import time
+
 from easytello import tello
 
 from enum import Enum
@@ -8,10 +10,11 @@ ERROR_BOUNDARY = 50
 class ControlStates(Enum):
     ON_GROUND = 1
     CENTER = 2
+    LAND = 3
 
 
 def init_drone():
-    return tello.Tello(), ControlStates.ON_GROUND
+    return tello.Tello(), ControlStates.ON_GROUND, time.time()
 
 
 def proportional_centering(drone, bounding_box_center, frame_center):
@@ -29,18 +32,21 @@ def proportional_centering(drone, bounding_box_center, frame_center):
 
 def getCommand(drone, state, bounding_boxes, frame_center):
     if state == ControlStates.ON_GROUND:
-        return drone.take_off, ()
+        return drone.takeoff, (), state
     elif state == ControlStates.CENTER:
         biggest_box = sorted(bounding_boxes, key=lambda x, y, w, h: w * h)
-        return proportional_centering(drone, biggest_box[0], frame_center)
-    return drone.land, (), state
+        return proportional_centering(drone, biggest_box[0], frame_center), state
+    else:
+        return drone.land, (), state
 
 
 def sendCommand(command, arguments):
     return command(*arguments)
 
 
-def sendCommandToDrone(drone, bounding_boxes, dimens, state):
+def sendCommandToDrone(drone, bounding_boxes, dimens, state, start_time):
+    if time.time() - start_time > 5:
+        state = ControlStates.LAND
     command, arguments, state = getCommand(drone, state, bounding_boxes, int(dimens[1] / 2))
     response = sendCommand(command, arguments) == 'ok'
     print(bounding_boxes)
@@ -64,3 +70,7 @@ def sendCommandToDrone(drone, bounding_boxes, dimens, state):
     # tello.Tello()
 
     return response, state
+
+if __name__ == '__main__':
+    drone, drone_state, start_time = init_drone()
+    command_successful, drone_state = sendCommandToDrone(drone, [(0, 2, 90, 5)], (480, 640, 3), drone_state, start_time)

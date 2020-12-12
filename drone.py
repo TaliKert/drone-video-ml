@@ -2,18 +2,19 @@ import argparse
 import sys
 
 # pull the Ultralytics "yolov3" library first
-sys.path.append("yolov3/")
+sys.path.append("/")
 
-from models import *
-from utils.datasets import *
-from utils.utils import *
+from yolov3.models import *
+from yolov3.utils.datasets import *
+from yolov3.utils.utils import *
 from drone_command import *
 
 
 def detect():
     # ip = opt.droneip
+    ip = '192.168.10.1'
     # For the Tello drone, this should be `udp://<LOCAL IP>:111111`
-    source = 'rtsp://' + opt.droneip + ':5554/camera'
+    source = 'rtsp://' + ip + ':5554/camera'
 
     # Initialize
     device = torch_utils.select_device(opt.device)
@@ -71,7 +72,7 @@ def run_inference(dataset, device, model, imgsz, half):
         bounding_boxes, im0 = process_detections(im0s, img, path, pred, t1, t2)
 
         if im0 is not None and len(bounding_boxes) > 0:
-            command_successful, drone_state = sendCommandToDrone(drone, bounding_boxes, im0.shape, drone_state)
+            command_successful, drone_state = sendCommandToDrone(drone, bounding_boxes, im0.shape, drone_state, start_time)
 
 
 def process_detections(im0s, img, path, pred, t1, t2):
@@ -119,6 +120,6 @@ if __name__ == '__main__':
     opt.names = check_file(opt.names)  # check file
     print(opt)
 
-    drone, drone_state = init_drone()
+    drone, drone_state, start_time = init_drone()
     with torch.no_grad():
         detect()
