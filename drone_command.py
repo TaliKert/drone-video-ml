@@ -27,9 +27,12 @@ def send_rc(drone, a, b, c, d):
 
 
 # P - controller, maybe should try PD-controller
-def proportional_centering(drone, bounding_box_center, frame_center):
-    KP = 0.1
-    error = frame_center - bounding_box_center
+def proportional_checking(drone, bounding_box_center, frame_center, size, wanted_size):
+    KPy = 0.1
+    KPf = 0.0001
+    error_yaw = frame_center - bounding_box_center
+    error_forward = wanted_size - size
+    print("ERROR FORWARD", error_forward)
     """
     Send RC control via four channels.
         a: left/right (-100~100)
@@ -37,7 +40,7 @@ def proportional_centering(drone, bounding_box_center, frame_center):
         c: up/down (-100~100)
         d: yaw (-100~100)
     """
-    return send_rc, (drone, 0, 0, 0, -int(KP * error))
+    return send_rc, (drone, 0, int(KPf*error_forward), 0, -int(KPy * error_yaw))
 
 
 def getCommand(drone, state, bounding_boxes, frame_center):
@@ -45,8 +48,8 @@ def getCommand(drone, state, bounding_boxes, frame_center):
         return drone.takeoff, (), state
     elif state == ControlStates.CENTER:
         biggest_box = sorted(bounding_boxes, key=lambda box: box.numpy()[0][2] * box.numpy()[0][3])
-        print(biggest_box)
-        command, arguments = proportional_centering(drone, biggest_box[0].numpy()[0][0], frame_center)
+        size = biggest_box[0].numpy()[0][2] * biggest_box[0].numpy()[0][3]
+        command, arguments = proportional_checking(drone, biggest_box[0].numpy()[0][0], frame_center, size, 450000.0)
         return command, arguments, state
     else:
         drone.rc_control(0, 0, 0, 0)
