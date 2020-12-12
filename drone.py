@@ -4,17 +4,17 @@ import sys
 # pull the Ultralytics "yolov3" library first
 sys.path.append("/")
 
-from yolov3.models import *
-from yolov3.utils.datasets import *
-from yolov3.utils.utils import *
+from models import *
+from utils.datasets import *
+from utils.utils import *
 from drone_command import *
 
 
 def detect():
-    # ip = opt.droneip
-    ip = '192.168.10.1'
     # For the Tello drone, this should be `udp://<LOCAL IP>:111111`
-    source = 'rtsp://' + ip + ':5554/camera'
+
+    source = 'udp://192.168.10.1:11111'
+    drone, drone_state, start_time = init_drone()
 
     # Initialize
     device = torch_utils.select_device(opt.device)
@@ -40,12 +40,12 @@ def detect():
     # Run inference
     t0 = time.time()
 
-    run_inference(dataset, device, model, opt.img_size, half)
+    run_inference(dataset, device, model, opt.img_size, half, drone, drone_state, start_time)
 
     print('Done. (%.3fs)' % (time.time() - t0))
 
 
-def run_inference(dataset, device, model, imgsz, half):
+def run_inference(dataset, device, model, imgsz, half, drone, drone_state, start_time):
     img = torch.zeros((1, 3, imgsz, imgsz), device=device)  # init img
     _ = model(img.half() if half else img.float()) if device.type != 'cpu' else None  # run once
 
@@ -71,8 +71,12 @@ def run_inference(dataset, device, model, imgsz, half):
 
         bounding_boxes, im0 = process_detections(im0s, img, path, pred, t1, t2)
 
+        if time.time() - start_time > 25:
+            drone.land()
+            break
+
         if im0 is not None and len(bounding_boxes) > 0:
-            command_successful, drone_state = sendCommandToDrone(drone, bounding_boxes, im0.shape, drone_state, start_time)
+            command_successful, drone_state = sendCommandToDrone(drone, bounding_boxes, im0.shape, drone_state)
 
 
 def process_detections(im0s, img, path, pred, t1, t2):
@@ -114,12 +118,11 @@ if __name__ == '__main__':
     parser.add_argument('--iou-thres', type=float, default=0.6, help='IOU threshold for NMS')
     parser.add_argument('--device', default='', help='device id (i.e. 0 or 0,1) or cpu')
     parser.add_argument('--img-size', type=int, default=512, help='inference size (pixels)')
-    parser.add_argument('--droneip', type=str, help='drone IP :D')
+    parser.add_argument('--droneip', type=str, default='192.168.10.1', help='drone IP :D')
     opt = parser.parse_args()
     opt.cfg = check_file(opt.cfg)  # check file
     opt.names = check_file(opt.names)  # check file
     print(opt)
 
-    drone, drone_state, start_time = init_drone()
     with torch.no_grad():
         detect()
