@@ -40,7 +40,7 @@ def proportional_centering(drone, bounding_box_center, frame_center):
         c: up/down (-100~100)
         d: yaw (-100~100)
     """
-    return send_rc, (drone, -int(KP * error), 0, 0, 0)
+    return send_rc, (drone, 0, 0, 0, -int(KP * error))
 
 
 def getCommand(drone, state, bounding_boxes, frame_center):
