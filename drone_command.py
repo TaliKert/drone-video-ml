@@ -15,7 +15,7 @@ def init_drone():
     drone = tello.Tello()
     drone.takeoff()
     send_rc(drone, 0, 0, 0, 0)
-    drone.up(50)
+    drone.up(150)
     drone.send_command('streamon')
     return drone, ControlStates.CENTER, time.time()
 
@@ -26,13 +26,12 @@ def send_rc(drone, a, b, c, d):
     drone.socket.sendto(command.encode('utf-8'), drone.tello_address)
 
 
-# P - controller, maybe should try PD-controller
+# P - controller
 def proportional_checking(drone, bounding_box_center, frame_center, size, wanted_size):
     KPy = 0.1
-    KPf = 0.0001
+    KPf = 0.00015
     error_yaw = frame_center - bounding_box_center
     error_forward = wanted_size - size
-    print("ERROR FORWARD", error_forward)
     """
     Send RC control via four channels.
         a: left/right (-100~100)
@@ -49,7 +48,7 @@ def getCommand(drone, state, bounding_boxes, frame_center):
     elif state == ControlStates.CENTER:
         biggest_box = sorted(bounding_boxes, key=lambda box: box.numpy()[0][2] * box.numpy()[0][3])
         size = biggest_box[0].numpy()[0][2] * biggest_box[0].numpy()[0][3]
-        command, arguments = proportional_checking(drone, biggest_box[0].numpy()[0][0], frame_center, size, 450000.0)
+        command, arguments = proportional_checking(drone, biggest_box[0].numpy()[0][0], frame_center, size, 400000.0)
         return command, arguments, state
     else:
         drone.rc_control(0, 0, 0, 0)
@@ -63,7 +62,6 @@ def sendCommand(command, arguments):
 def sendCommandToDrone(drone, bounding_boxes, dimens, state):
     command, arguments, state = getCommand(drone, state, bounding_boxes, int(dimens[1] / 2))
     response = sendCommand(command, arguments) == 'ok'
-    # response = str(state)
     print(bounding_boxes)
     """
     [tensor([[245., 200., 292., 306.],
@@ -81,7 +79,5 @@ def sendCommandToDrone(drone, bounding_boxes, dimens, state):
     """
 
     print(dimens)  # DIMENS (480, 640, 3)
-
-    # tello.Tello()
 
     return response, state

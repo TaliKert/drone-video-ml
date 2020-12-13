@@ -16,6 +16,7 @@ def detect():
     source = 'udp://192.168.10.1:11111'
     drone, drone_state, start_time = init_drone()
 
+
     # Initialize
     device = torch_utils.select_device(opt.device)
 
@@ -71,7 +72,7 @@ def run_inference(dataset, device, model, imgsz, half, drone, drone_state, start
 
         bounding_boxes, im0 = process_detections(im0s, img, path, pred, t1, t2)
 
-        if time.time() - start_time > 25:
+        if time.time() - start_time > 180:
             drone.land()
             break
 
